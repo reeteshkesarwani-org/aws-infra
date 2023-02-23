@@ -86,3 +86,64 @@ resource "aws_route_table_association" "private" {
   subnet_id      = element(aws_subnet.pvt_subnet.*.id, count.index)
   route_table_id = aws_route_table.private.id
 }
+
+# Create a security group for your application instances
+resource "aws_security_group" "example_app_security_group" {
+  name_prefix = "example_app_security_group"
+  vpc_id = aws_vpc.vpc_network.id
+  depends_on  = [aws_vpc.vpc_network]
+  # Ingress rules
+  ingress {
+    description = "Allow SSH"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "Allow HTTP"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "Allow HTTPS"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "Allow your application port"
+    from_port   = 3000
+    to_port     = 3000
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# Create an EC2 instance
+resource "aws_instance" "example_ec2_instance" {
+  ami           = "ami-03030ce7a6c880e50"
+  instance_type = "t2.micro"
+  vpc_security_group_ids = [aws_security_group.example_app_security_group.id]
+  subnet_id     = aws_subnet.pub_subnet[0].id
+
+  root_block_device {
+    volume_size = 50
+    volume_type = "gp2"
+    delete_on_termination = true
+  }
+
+  # Prevent accidental termination of instance
+  lifecycle {
+    prevent_destroy = false
+  }
+   tags = {
+    Name = "EC2 created"
+  }
+}
