@@ -24,3 +24,20 @@ variable "availability_zones" {
   type        = list(any)
   description = "The az that the resources will be launched"
 }
+
+variable "ami" {
+description = "value of ami"
+}
+
+variable "DATABASE_USER"{
+description = "value of database username"
+}
+variable "DATABASE_PASSWORD"{
+description = "value of database password"
+}
+variable "PORT"{
+description = "value of database port"
+}
+variable "DATABASE_NAME"{
+description = "value of database name"
+}
