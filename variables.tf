@@ -30,3 +30,19 @@ variable "availability_zones" {
   description = "The az that the resources will be launched"
   default     = ["us-east-1a", "us-east-1b", "us-east-1c"]
 }
+
+variable "ami"{
+description = "Given the value of ami"
+}
+variable "DATABASE_USER"{
+description = "value of database username"
+}
+variable "DATABASE_PASSWORD"{
+description = "value of database password"
+}
+variable "PORT"{
+description = "value of database port"
+}
+variable "DATABASE_NAME"{
+description = "value of database name"
+}
