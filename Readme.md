@@ -51,7 +51,7 @@ Run `terraform apply` - Terraform automatically creates a new execution plan as 
 ## Purpose 
 Building Custom Application AMI using Packer, Continuous Integration: Add New GitHub Actions Workflow for Web App, Infrastructure as Code w/ Terraform, EC2 Instance
 
-## Requirments
+## Requirements
 
 The EC2 instance must be launched in the VPC created by your Terraform template. You cannot launch the EC2 instance in the default VPC.
 
@@ -109,3 +109,89 @@ variables inside the file, and run `terraform init`:
 Run `terraform plan` - command creates an execution plan, which lets you preview the changes that Terraform plans to make to your infrastructure
 
 Run `terraform apply` - Terraform automatically creates a new execution plan as if you had run terraform plan prompts you to approve that plan, and takes the indicated actions.
+
+
+# Assignment-5 Addition of DB
+
+## Purpose
+In this assignment, you will update the Terraform template for the application stack to add the following resources:DB Security Group,S3 Bucket,RDS Parameter Group,RDS Instance,User Data,IAM Policy,IAM Role,Web Application
+
+## Requirements
+
+## DB Security Group
+
+Create an EC2 security group for your RDS instances.
+
+Add ingress rule to allow TCP traffic on the port 3306 for MySQL/MariaDB or 5432 for PostgreSQL.
+
+The Source of the traffic should be the application security group. 
+
+Restrict access to the instance from the internet.
+
+This security group will be referred to as the database security group.
+
+## S3 Bucket
+
+Create a private S3 bucket with a randomly generated bucket name depending on the environment.
+
+Make sure Terraform can delete the bucket even if it is not empty.
+
+To delete all objects from the bucket manually use the CLI before you delete the bucket you can use the following AWS CLI command that may work for removing all objects from the bucket. aws s3 rm s3://bucket-name --recursive.
+
+Enable default encryption for S3 BucketsLinks to an external site..
+
+Create a lifecycle policy for the bucket to transition objects from STANDARD storage class to STANDARD_IA storage class after 30 days.
+
+## RDS Parameter Group
+
+A DB parameter group acts as a container for engine configuration values that are applied to one or more DB instances. Create a new parameter group to match your database (Postgres or MySQL) and its version. Then RDS DB instance must use the new parameter group and not the default parameter group.
+
+## RDS Instance
+WARNING: Setting Public accessibility to true will expose your instance to the internet.
+
+Your RDS instance should be created with the following configuration. You may use default values/settings for any property not mentioned below.
+
+Property	         Value
+Database Engine	     MySQL/PostgreSQL
+DB Instance Class	 db.t3.micro
+Multi-AZ deployment	 No
+DB instance identifier	csye6225
+Master username	      csye6225
+Master password	      pick a strong password
+Subnet group	      Private subnet for RDS instances
+Public accessibility	  No
+Database name	       csye6225
+Database security group should be attached to this RDS instance.
+
+## User Data
+EC2 instance should be launched with user dataLinks to an external site..
+Database username, password, hostname, and S3 bucket name should be passed to the web application using user dataLinks to an external site..
+The S3 bucket name must be passed to the application via EC2 user data.
+
+## IAM Policy
+
+WebAppS3 the policy will allow EC2 instances to perform S3 buckets. This is required for applications on your EC2 instance to talk to the S3 bucket.
+
+Note: Replace * with appropriate permissions for the S3 bucket to create security policies.
+
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": [
+                "s3:*"
+            ],
+            "Effect": "Allow",
+            "Resource": [
+                "arn:aws:s3:::YOUR_BUCKET_NAME",
+                "arn:aws:s3:::YOUR_BUCKET_NAME/*"
+            ]
+        }
+    ]
+}
+
+## IAM Role
+Create an IAM role EC2-CSYE6225 for the EC2 service and attach the WebAppS3 policy to it. You will attach this role to your EC2 instance.
+
+## Web Application
+The web application’s database must be the RDS instance launched by the Terraform template when running on the EC2 instance. You can no longer install/use the local database on the EC2 instance.
