@@ -46,3 +46,6 @@ description = "value of database port"
 variable "DATABASE_NAME"{
 description = "value of database name"
 }
+variable "root_domain"{
+ description="setting up the root_domain"
+}

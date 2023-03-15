@@ -309,3 +309,16 @@ resource "aws_db_instance" "db_instance" {
     Name = "db_instance"
   }
 }
+
+data "aws_route53_zone" "hosted_zone" {
+  name = "${var.environment}.${var.root_domain}"
+}
+
+
+resource "aws_route53_record" "app_record" {
+  zone_id = data.aws_route53_zone.hosted_zone.zone_id
+  name    = "${var.environment}.${var.root_domain}"
+  type    = "A"
+  ttl     = "60"
+  records = [aws_instance.example_ec2_instance.public_ip]
+}
