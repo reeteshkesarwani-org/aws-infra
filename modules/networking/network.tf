@@ -163,6 +163,11 @@ echo "export BUCKET_REGION=${var.region} " >> /home/ec2-user/webapp/.env
 sudo chmod +x setenv.sh
 sh setenv.sh
 
+sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+    -a fetch-config \
+    -m ec2 \
+    -c file:/home/ec2-user/webapp/cloudwatchconfig.json \
+    -s
 EOF
 
    tags = {
@@ -321,4 +326,11 @@ resource "aws_route53_record" "app_record" {
   type    = "A"
   ttl     = "60"
   records = [aws_instance.example_ec2_instance.public_ip]
+}
+
+
+# cloudwatch policy for ec2 role
+resource "aws_iam_role_policy_attachment" "cloudwatch_policy" {
+  role       = aws_iam_role.WebAppS3_role.name
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
 }
