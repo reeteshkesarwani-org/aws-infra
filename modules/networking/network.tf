@@ -225,6 +225,15 @@ resource "aws_s3_bucket" "mybucket" {
 
 }
 
+#block public access to s3 bucket
+resource "aws_s3_bucket_public_access_block" "s3Public" {
+  bucket = aws_s3_bucket.mybucket.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
 #Create iam policy to accress s3
 resource "aws_iam_policy" "WebAppS3_policy" {
   name = "WebAppS3"
