@@ -45,3 +45,7 @@ description = "value of database name"
 variable "root_domain"{
 description="value for the root domain"
 }
+
+variable "keyname" {
+  description = "value of keyname"
+}

@@ -13,6 +13,6 @@ module "networking" {
   DATABASE_NAME=var.DATABASE_NAME
   PORT=var.PORT
   root_domain=var.root_domain
-
+  keyname=var.keyname
 
 }
