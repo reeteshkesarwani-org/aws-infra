@@ -90,14 +90,14 @@ resource "aws_route_table_association" "private" {
 # Create a security group for your application instances
 resource "aws_security_group" "example_app_security_group" {
   name_prefix = "example_app_security_group"
-  vpc_id = aws_vpc.vpc_network.id
+  vpc_id      = aws_vpc.vpc_network.id
   depends_on  = [aws_vpc.vpc_network]
   #Ingress rules
   ingress {
-    description = "Allow SSH"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
+    description     = "Allow SSH"
+    from_port       = 22
+    to_port         = 22
+    protocol        = "tcp"
     security_groups = [aws_security_group.lb_sg.id]
   }
 
@@ -119,10 +119,10 @@ resource "aws_security_group" "example_app_security_group" {
   # }
 
   ingress {
-    description = "Allow your application port"
-    from_port   = 3000
-    to_port     = 3000
-    protocol    = "tcp"
+    description     = "Allow your application port"
+    from_port       = 3000
+    to_port         = 3000
+    protocol        = "tcp"
     security_groups = [aws_security_group.lb_sg.id]
   }
   egress {
@@ -323,6 +323,8 @@ resource "aws_db_instance" "db_instance" {
   publicly_accessible       = false
   db_subnet_group_name      = aws_db_subnet_group.db_subnet_group.name
   vpc_security_group_ids    = [aws_security_group.database.id]
+  kms_key_id = aws_kms_key.RdsKmsKey.arn
+  storage_encrypted = true
   tags = {
     Name = "db_instance"
   }
@@ -345,8 +347,8 @@ resource "aws_route53_record" "app_record" {
 }
 
 resource "aws_cloudwatch_log_group" "csye6225" {
-name = "csye6225"
-  
+  name = "csye6225"
+
 }
 
 
@@ -368,7 +370,7 @@ resource "aws_security_group" "lb_sg" {
     to_port     = 80
     cidr_blocks = ["0.0.0.0/0"]
   }
-  
+
   ingress {
     protocol    = "tcp"
     from_port   = 443
@@ -394,7 +396,7 @@ resource "aws_lb" "application_lb" {
   load_balancer_type = "application"
   ip_address_type    = "ipv4"
   internal           = false
-  subnets            = aws_subnet.pub_subnet.*.id 
+  subnets            = aws_subnet.pub_subnet.*.id
   security_groups    = [aws_security_group.lb_sg.id]
 
   tags = {
@@ -427,73 +429,157 @@ resource "aws_lb_target_group" "lb_target_group" {
 }
 
 # Load balancer listener
-resource "aws_lb_listener" "lb_listener" {
-  load_balancer_arn = aws_lb.application_lb.arn
-  port              = 80
-  protocol          = "HTTP"
+# resource "aws_lb_listener" "lb_listener" {
+#   load_balancer_arn = aws_lb.application_lb.arn
+#   port              = 80
+#   protocol          = "HTTP"
 
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.lb_target_group.arn
+#   default_action {
+#     type             = "forward"
+#     target_group_arn = aws_lb_target_group.lb_target_group.arn
+#   }
+# }
+
+# # Autoscaling launch configuration
+# resource "aws_launch_configuration" "autoscaling_launch_configuration" {
+#   name                        = "autoscaling-launch-configuration"
+#   image_id                    = var.ami
+#   instance_type               = "t2.micro"
+#   key_name                    = var.keyname
+#   security_groups             = [aws_security_group.example_app_security_group.id]
+#   iam_instance_profile        = aws_iam_instance_profile.app_instance_profile.id
+#   associate_public_ip_address = true
+
+#   root_block_device {
+#     volume_type = "gp2"
+#     volume_size = 50
+#   }
+
+#   user_data = <<EOF
+# #!/bin/bash
+# echo "export DATABASE_USER=${var.DATABASE_USER} " >> /home/ec2-user/webapp/.env
+# echo "export DATABASE_PASSWORD=${var.DATABASE_PASSWORD} " >> /home/ec2-user/webapp/.env
+# echo "export PORT=${var.PORT} " >> /home/ec2-user/webapp/.env
+# echo "export DATABASE_HOST=$(echo ${aws_db_instance.db_instance.endpoint} | cut -d: -f1)" >> /home/ec2-user/webapp/.env
+# echo "export DATABASE_NAME=${var.DATABASE_NAME} " >> /home/ec2-user/webapp/.env
+# echo "export BUCKET_NAME=${aws_s3_bucket.mybucket.bucket} " >> /home/ec2-user/webapp/.env
+# echo "export BUCKET_REGION=${var.region} " >> /home/ec2-user/webapp/.env
+# sudo chmod +x setenv.sh
+# sh setenv.sh
+
+# sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+#     -a fetch-config \
+#     -m ec2 \
+#     -c file:/home/ec2-user/webapp/cloudwatchconfig.json \
+#     -s
+
+# sudo systemctl restart webapp.service
+# EOF
+#   lifecycle {
+#     create_before_destroy = true
+#   }
+# }
+
+# resource "aws_network_interface" "example_network_interface" {
+#   subnet_id = aws_subnet.pub_subnet[0].id
+
+# }
+
+# Autoscaling launch template
+resource "aws_launch_template" "autoscaling_launch_template" {
+  name                   = "autoscaling_launchtemplate"
+  image_id               = var.ami
+  instance_type          = "t2.micro"
+  key_name               = var.keyname
+  //vpc_security_group_ids = [aws_security_group.example_app_security_group.id]
+  //security_group             = [aws_security_group.example_app_security_group.id]
+    network_interfaces {
+    associate_public_ip_address = true
+    security_groups             = [aws_security_group.example_app_security_group.id]
   }
-}
-
-# Autoscaling launch configuration
-resource "aws_launch_configuration" "autoscaling_launch_configuration" {
-  name                        = "autoscaling-launch-configuration"
-  image_id                    = var.ami
-  instance_type               = "t2.micro"
-  key_name                    = var.keyname
-  security_groups             = [aws_security_group.example_app_security_group.id]
-  iam_instance_profile        = aws_iam_instance_profile.app_instance_profile.id
-  associate_public_ip_address = true
-
-  root_block_device {
-    volume_type = "gp2"
-    volume_size = 50
+   block_device_mappings {
+    device_name = "/dev/xvda"
+    ebs {
+      volume_type           = "gp2"
+      volume_size           = 50
+      delete_on_termination = true
+      kms_key_id=aws_kms_key.EBSKmsKey.arn
+      encrypted = true
+    }
   }
-
-  user_data = <<EOF
-#!/bin/bash
-echo "export DATABASE_USER=${var.DATABASE_USER} " >> /home/ec2-user/webapp/.env
-echo "export DATABASE_PASSWORD=${var.DATABASE_PASSWORD} " >> /home/ec2-user/webapp/.env
-echo "export PORT=${var.PORT} " >> /home/ec2-user/webapp/.env
-echo "export DATABASE_HOST=$(echo ${aws_db_instance.db_instance.endpoint} | cut -d: -f1)" >> /home/ec2-user/webapp/.env
-echo "export DATABASE_NAME=${var.DATABASE_NAME} " >> /home/ec2-user/webapp/.env
-echo "export BUCKET_NAME=${aws_s3_bucket.mybucket.bucket} " >> /home/ec2-user/webapp/.env
-echo "export BUCKET_REGION=${var.region} " >> /home/ec2-user/webapp/.env
-sudo chmod +x setenv.sh
-sh setenv.sh
-
-sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
-    -a fetch-config \
-    -m ec2 \
-    -c file:/home/ec2-user/webapp/cloudwatchconfig.json \
-    -s
-
-sudo systemctl restart webapp.service
-EOF
+  iam_instance_profile {
+    name = aws_iam_instance_profile.app_instance_profile.id
+  }
   lifecycle {
     create_before_destroy = true
   }
+  # associate_public_ip_address = true
+
+  user_data = base64encode(<<-EOF
+    #!/bin/bash
+    echo "export DATABASE_USER=${var.DATABASE_USER} " >> /home/ec2-user/webapp/.env
+    echo "export DATABASE_PASSWORD=${var.DATABASE_PASSWORD} " >> /home/ec2-user/webapp/.env
+    echo "export PORT=${var.PORT} " >> /home/ec2-user/webapp/.env
+    echo "export DATABASE_HOST=$(echo ${aws_db_instance.db_instance.endpoint} | cut -d: -f1)" >> /home/ec2-user/webapp/.env
+    echo "export DATABASE_NAME=${var.DATABASE_NAME} " >> /home/ec2-user/webapp/.env
+    echo "export BUCKET_NAME=${aws_s3_bucket.mybucket.bucket} " >> /home/ec2-user/webapp/.env
+    echo "export BUCKET_REGION=${var.region} " >> /home/ec2-user/webapp/.env
+    sudo chmod +x setenv.sh
+    sh setenv.sh
+
+    sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+        -a fetch-config \
+        -m ec2 \
+        -c file:/home/ec2-user/webapp/cloudwatchconfig.json \
+        -s
+
+    sudo systemctl restart webapp.service
+    EOF
+  )
+
+  tag_specifications {
+    resource_type = "instance"
+    tags = {
+      Name = "autoscaling-instance"
+    }
+  }
+
+
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 2
+  }
 }
+
+
+
 
 # Autoscaling group
 resource "aws_autoscaling_group" "autoscaling_group" {
-  name                 = "autoscaling-group"
-  launch_configuration = aws_launch_configuration.autoscaling_launch_configuration.name
-  vpc_zone_identifier  = aws_subnet.pub_subnet.*.id 
-  target_group_arns    = [aws_lb_target_group.lb_target_group.arn]
-  default_cooldown     = 60
-  desired_capacity     = 1
-  min_size             = 1
-  max_size             = 3
-  health_check_type    = "EC2"
+  name                = "autoscaling-group"
+  vpc_zone_identifier = aws_subnet.pub_subnet.*.id
+  target_group_arns   = [aws_lb_target_group.lb_target_group.arn]
+  default_cooldown    = 60
+  desired_capacity    = 1
+  min_size            = 1
+  max_size            = 3
+  health_check_type   = "EC2"
 
   tag {
     key                 = "Name"
     value               = "csye6225-ec2"
     propagate_at_launch = true
+  }
+  launch_template {
+    id      = aws_launch_template.autoscaling_launch_template.id
+    version = "$Latest"
+  }
+  instance_refresh {
+    strategy = "Rolling"
+    preferences {
+      min_healthy_percentage = 90
+    }
   }
 }
 
@@ -551,5 +637,196 @@ resource "aws_cloudwatch_metric_alarm" "cpu_alarm_low" {
 
   dimensions = {
     AutoScalingGroupName = aws_autoscaling_group.autoscaling_group.name
+  }
+}
+
+
+resource "aws_kms_key" "EBSKmsKey" {
+  description = "KMS Key for EBS"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "Enable IAM User Permissions"
+        Effect = "Allow"
+        Principal = {
+          AWS = [
+            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root",
+            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling",
+          ]
+        }
+        Action   = "kms:*"
+        Resource = "*"
+      },
+      {
+        Sid    = "Allow access for Key Administrators"
+        Effect = "Allow"
+        Principal = {
+          AWS = [
+            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling",
+          ]
+        }
+        Action = [
+          "kms:Create*",
+          "kms:Describe*",
+          "kms:Enable*",
+          "kms:List*",
+          "kms:Put*",
+          "kms:Update*",
+          "kms:Revoke*",
+          "kms:Disable*",
+          "kms:Get*",
+          "kms:Delete*",
+          "kms:TagResource",
+          "kms:UntagResource",
+          "kms:ScheduleKeyDeletion",
+          "kms:CancelKeyDeletion",
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "Allow use of the key"
+        Effect = "Allow"
+        Principal = {
+          AWS = [
+            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling",
+          ]
+        }
+        Action = [
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey",
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "Allow attachment of persistent resources"
+        Effect = "Allow"
+        Principal = {
+          AWS = [
+            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling",
+          ]
+        }
+        Action = [
+          "kms:CreateGrant",
+          "kms:ListGrants",
+          "kms:RevokeGrant",
+        ]
+        Resource = "*"
+      },
+    ]
+  })
+}
+
+# resource "aws_kms_alias" "EBSKeyAlias" {
+#   name          = "alias/ebsKey"
+#   target_key_id = aws_kms_key.EBSKmsKey.key_id
+# }
+
+resource "aws_kms_key" "RdsKmsKey" {
+  description = "KMS Key for RDS"
+  policy = jsonencode({
+    Id       = "kms-key-for-rds"
+    Version  = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "Enable IAM User Permissions"
+        Effect = "Allow"
+        Principal = {
+          AWS = [
+            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root",
+          ]
+        }
+        Action   = "kms:*"
+        Resource = "*"
+      },
+      {
+        Sid    = "Allow access for Key Administrators"
+        Effect = "Allow"
+        Principal = {
+          AWS = [
+            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/rds.amazonaws.com/AWSServiceRoleForRDS",
+          ]
+        }
+        Action = [
+          "kms:Create*",
+          "kms:Describe*",
+          "kms:Enable*",
+          "kms:List*",
+          "kms:Put*",
+          "kms:Update*",
+          "kms:Revoke*",
+          "kms:Disable*",
+          "kms:Get*",
+          "kms:Delete*",
+          "kms:TagResource",
+          "kms:UntagResource",
+          "kms:ScheduleKeyDeletion",
+          "kms:CancelKeyDeletion",
+        ]
+        Resource = "*"
+      },
+      {
+        Sid       = "Allow use of the key"
+        Effect    = "Allow"
+        Principal = {
+          AWS = [
+            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/rds.amazonaws.com/AWSServiceRoleForRDS",
+          ]
+        }
+        Action = [
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey",
+        ]
+        Resource = "*"
+      },
+      {
+        Sid       = "Allow attachment of persistent resources"
+        Effect    = "Allow"
+        Principal = {
+          AWS = [
+            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/rds.amazonaws.com/AWSServiceRoleForRDS",
+          ]
+        }
+        Action = [
+          "kms:CreateGrant",
+          "kms:ListGrants",
+          "kms:RevokeGrant",
+        ]
+        Resource = "*"
+      },
+    ]
+  })
+  deletion_window_in_days = 7
+}
+
+# data "aws_caller_identity" "current" {}
+
+# resource "aws_kms_alias" "RDSKeyAlias" {
+#   name          = "alias/rdsKey"
+#   target_key_id = aws_kms_key.RdsKmsKey.key_id
+# }
+
+
+
+data "aws_caller_identity" "current" {}
+
+
+//Load balancer listener
+resource "aws_lb_listener" "lb_listener" {
+  load_balancer_arn = aws_lb.application_lb.arn
+  port              = 443
+  protocol          = "HTTPS"
+  certificate_arn   = var.ssl_certificate
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.lb_target_group.arn
+
   }
 }

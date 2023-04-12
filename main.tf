@@ -14,5 +14,5 @@ module "networking" {
   PORT=var.PORT
   root_domain=var.root_domain
   keyname=var.keyname
-
+  ssl_certificate=var.ssl_certificate
 }
