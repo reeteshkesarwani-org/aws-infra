@@ -49,3 +49,7 @@ description="value for the root domain"
 variable "keyname" {
   description = "value of keyname"
 }
+
+variable "ssl_certificate"{
+   description="varible setup for certificate"
+}

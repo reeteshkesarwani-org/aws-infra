@@ -53,3 +53,7 @@ variable "root_domain"{
 variable "keyname" {
   description="setting up the keyname"
 }
+
+variable "ssl_certificate"{
+   description="varible setup for certificate"
+}
