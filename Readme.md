@@ -195,3 +195,26 @@ Create an IAM role EC2-CSYE6225 for the EC2 service and attach the WebAppS3 poli
 
 ## Web Application
 The web application’s database must be the RDS instance launched by the Terraform template when running on the EC2 instance. You can no longer install/use the local database on the EC2 instance.
+
+
+# Assignment-9 Application Load Balancer For Your Web Application
+
+
+## Requirements
+
+Setup Application Load Balancer For Your Web Application
+Set up an Application load balancer to accept HTTPS traffic on port 443 and forward it to your application instances on whatever port it listens on.
+
+Secure Application Endpoints- Secure your web application endpoints with valid SSL certificates
+
+Encrypted EBS Volumes - All EC2 instances must now be launched with encrypted EBS volumes.
+
+Encrypted RDS Instances
+
+CI/CD for Web Application
+
+## command to import the certificate
+
+openssl req -new -newkey rsa:2048 -nodes -keyout reetesh.me.key -out reetesh.me.csr
+
+aws acm import-certificate --certificate fileb://path/to/cert.pem --private-key fileb://path/to/private/.key --profile demo
